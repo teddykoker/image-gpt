@@ -95,7 +95,7 @@ test set:
 python src/sample.py models/fmnist_gen.ckpt
 ```
 
-Gifs like the one seen in [my tweet](https://twitter.com/teddykoker) can be made
+Gifs like the one seen in [my tweet](https://twitter.com/teddykoker/status/1275809619705806850) can be made
 like so:
 
 ```bash
