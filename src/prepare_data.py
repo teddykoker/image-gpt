@@ -31,7 +31,7 @@ def download(dataset, datapath):
     return train_x, train_y, test_x, test_y
 
 
-def find_centroids(train_x, num_clusters=8, batch_size=1024):
+def find_centroids(train_x, num_clusters=16, batch_size=1024):
     pixels = train_x.reshape(-1, train_x.shape[-1])
     if batch_size:
         kmeans = MiniBatchKMeans(
@@ -93,7 +93,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=str, choices=DATASETS.keys(), default="mnist")
-    parser.add_argument("--num_clusters", default=8, type=int)
+    parser.add_argument("--num_clusters", default=16, type=int)
     parser.add_argument(
         "--batch_size",
         default=1024,

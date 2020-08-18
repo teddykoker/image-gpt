@@ -9,10 +9,11 @@ and accompanying [code](https://github.com/openai/image-gpt).
 input; last column is original image*
 
 Differences from original paper:
- * Uses 4-bit grayscale images instead of 9-bit RGB
- * 28x28 images are used instead of 32x32
- * Quantization is done naively using division, not KNN
- * Model is *much* smaller and can be trained with *much* less compute
+ * ~~Uses 4-bit grayscale images instead of 9-bit RGB~~
+ * ~~28x28 images are used instead of 32x32~~
+ * ~~Quantization is done naively using division, not KNN~~
+ * KNN Quantization is now used, number of centroids can be chosen in the
+     `prepare_data` command line script.
 
 According to their [blog post](https://openai.com/blog/image-gpt/), the largest
 model, iGPT-L (1.4 M parameters), was trained for 2500 V100-days. By greatly reducing the number of
@@ -39,11 +40,12 @@ Pre-trained models are located in `models` directory.
 ### Prepare Data
 
 To download and prepare data, run `src/prepare_data.py`. Omitting the `--fashion`
-argument will download normal MNIST. Images are downloaded and encoded with a
-4-bit grayscale pallete.
+argument will download normal MNIST. Images are downloaded and then quantized
+using *k*-means with `num_clusters` clusters.
 
 ```bash
-python src/prepare_data.py --fashion
+# options: mnist, fmnist, cifar10
+python src/prepare_data.py --dataset mnist --num_clusters=8
 ```
 
 ### Training
