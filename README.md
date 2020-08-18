@@ -56,7 +56,7 @@ Models can be trained using `src/run.py` with the `train` subcommand.
 #### Generative Pre-training
 
 ```bash
-python src/run.py train --name fmnist_gen
+python src/run.py --dataset mnist train --name mnist_gen
 ```
 
 The following hyperparameters can also be provided. Smallest model from paper is
@@ -81,8 +81,8 @@ a small reduction in learning rate is necessary.
 
 ```bash
 python src/run.py train \
-    --name fmnist_clf  \
-    --pretrained models/fmnist_gen.ckpt \
+    --name mnist_clf  \
+    --pretrained models/mnist_gen.ckpt \
     --classify \
     --learning_rate 3e-3
 ```
@@ -94,7 +94,7 @@ test set:
 
 ```bash
 # outputs to figure.png
-python src/sample.py models/fmnist_gen.ckpt
+python src/sample.py models/mnist_gen.ckpt
 ```
 
 Gifs like the one seen in [my tweet](https://twitter.com/teddykoker/status/1275809619705806850) can be made
@@ -102,5 +102,5 @@ like so:
 
 ```bash
 # outputs to out.gif
-python src/gif.py models/fmnist_gen.ckpt
+python src/gif.py models/mnist_gen.ckpt
 ```
