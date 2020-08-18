@@ -12,7 +12,7 @@ Differences from original paper:
  * ~~Uses 4-bit grayscale images instead of 9-bit RGB~~
  * ~~28x28 images are used instead of 32x32~~
  * ~~Quantization is done naively using division, not KNN~~
- * KNN Quantization is now used, number of centroids can be chosen in the
+ * *k*-Means is now used for image quantization, number of centroids can be chosen in the
      `prepare_data` command line script.
 
 According to their [blog post](https://openai.com/blog/image-gpt/), the largest
