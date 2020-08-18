@@ -37,21 +37,22 @@ NVIDIA 2070 in less than 2 hours.
 
 Pre-trained models are located in `models` directory.
 
-### Prepare Data
+### Compute Centroids
 
-To download and prepare data, run `src/prepare_data.py`. Omitting the `--fashion`
-argument will download normal MNIST. Images are downloaded and then quantized
-using *k*-means with `num_clusters` clusters.
+Images are downloaded, and centroids are computed using *k*-means with
+`num_clusters` clusters.  These centroids are used to quantize the images before
+they are fed into the model.
 
 ```bash
 # options: mnist, fmnist, cifar10
-python src/prepare_data.py --dataset mnist --num_clusters=8
+python src/compute_centroids.py --dataset mnist --num_clusters=8
 ```
+
+*Note: Use the same `num_clusters` as `num_vocab` in your model*.
 
 ### Training
 
 Models can be trained using `src/run.py` with the `train` subcommand. 
-
 
 #### Generative Pre-training
 

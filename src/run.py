@@ -1,8 +1,10 @@
 import pytorch_lightning as pl
-import pytorch_lightning.logging
+from pytorch_lightning import loggers as pl_loggers
+import numpy as np
 import argparse
 
-from module import ImageGPT
+from image_gpt import ImageGPT
+from data import dataloaders
 
 
 def train(args):
@@ -11,9 +13,10 @@ def train(args):
         # potentially modify model for classification
         model.hparams = args
     else:
-        model = ImageGPT(args)
+        model = ImageGPT(**vars(args))
 
-    logger = pl.logging.TensorBoardLogger("logs", name=args.name)
+    train_dl, valid_dl, test_dl = dataloaders(args.dataset, args.batch_size)
+    logger = pl_loggers.TensorBoardLogger("logs", name=args.name)
 
     if args.classify:
         # classification
@@ -38,7 +41,7 @@ def train(args):
             logger=logger,
         )
 
-    trainer.fit(model)
+    trainer.fit(model, train_dl, valid_dl)
 
 
 def test(args):
@@ -53,6 +56,7 @@ if __name__ == "__main__":
     parser = ImageGPT.add_model_specific_args(parser)
 
     parser.add_argument("--dataset", default="mnist")
+    parser.add_argument("--centroids", default="data/mnist_centroids.npy")
     parser.add_argument("--gpus", default="0")
 
     subparsers = parser.add_subparsers()
@@ -66,10 +70,5 @@ if __name__ == "__main__":
     parser_test.set_defaults(func=test)
 
     args = parser.parse_args()
-
-    args.train_x = f"data/{args.dataset}_train_x.npy"
-    args.train_y = f"data/{args.dataset}_train_y.npy"
-    args.test_x = f"data/{args.dataset}_test_x.npy"
-    args.test_y = f"data/{args.dataset}_test_y.npy"
 
     args.func(args)
