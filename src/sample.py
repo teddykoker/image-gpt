@@ -28,19 +28,19 @@ def sample(model, context, length, num_samples=1, temperature=1.0):
     return output
 
 
-def make_figure(rows):
+def make_figure(rows, centroids):
     figure = np.stack(rows, axis=0)
     rows, cols, h, w = figure.shape
-    figure = unquantize(figure.swapaxes(1, 2).reshape(h * rows, w * cols)).astype(
-        np.uint8
-    )
-    return Image.fromarray(figure)
+    figure = unquantize(figure.swapaxes(1, 2).reshape(h * rows, w * cols), centroids)
+    figure = (figure * 256).astype(np.uint8)
+    return Image.fromarray(np.squeeze(figure))
 
 
 def main(args):
     model = ImageGPT.load_from_checkpoint(args.checkpoint).gpt.cuda()
 
     test_x = np.load(args.test_x)
+    centroids = np.load(args.centroids)
     np.random.shuffle(test_x)
 
     # rows for figure
@@ -70,14 +70,15 @@ def main(args):
             np.concatenate([context_img[None, ...], preds, img[None, ...]], axis=0)
         )
 
-    figure = make_figure(rows)
+    figure = make_figure(rows, centroids)
     figure.save("figure.png")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("checkpoint")
-    parser.add_argument("--test_x", default="data/test_x.npy")
+    parser.add_argument("--test_x", default="data/mnist_test_x.npy")
+    parser.add_argument("--centroids", default="data/mnist_centroids.npy")
     parser.add_argument("--num_examples", default=5)
     parser.add_argument("--num_samples", default=5)
     args = parser.parse_args()

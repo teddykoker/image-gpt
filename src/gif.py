@@ -34,6 +34,8 @@ def main(args):
     model = ImageGPT.load_from_checkpoint(args.checkpoint).gpt.cuda()
     model.eval()
 
+    centroids = np.load(args.centroids)
+
     context = torch.zeros(0, dtype=torch.long).cuda()
 
     frames = generate(model, context, 28 * 28, num_samples=args.rows * args.cols)
@@ -47,7 +49,8 @@ def main(args):
     f, n, _ = pad_frames.shape
     pad_frames = pad_frames.reshape(f, args.rows, args.cols, 28, 28)
     pad_frames = pad_frames.swapaxes(2, 3).reshape(f, 28 * args.rows, 28 * args.cols)
-    pad_frames = pad_frames[..., np.newaxis] * np.ones(3) * 17
+    pad_frames = np.squeeze(unquantize(pad_frames, centroids))
+    pad_frames = pad_frames[..., np.newaxis] * np.ones(3) * 256
     pad_frames = pad_frames.astype(np.uint8)
 
     clip = ImageSequenceClip(list(pad_frames)[:: args.downsample], fps=args.fps).resize(
@@ -59,6 +62,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("checkpoint")
+    parser.add_argument("--centroids", default="data/mnist_centroids.npy")
     parser.add_argument("--rows", type=int, default=5)
     parser.add_argument("--cols", type=int, default=5)
     parser.add_argument("--fps", type=int, default=20)

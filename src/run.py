@@ -52,12 +52,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser = ImageGPT.add_model_specific_args(parser)
 
-    parser.add_argument("--train_x", default="data/train_x.npy")
-    parser.add_argument("--train_y", default="data/train_y.npy")
-    parser.add_argument("--test_x", default="data/test_x.npy")
-    parser.add_argument("--test_y", default="data/test_y.npy")
-
+    parser.add_argument("--dataset", default="mnist")
     parser.add_argument("--gpus", default="0")
+
     subparsers = parser.add_subparsers()
     parser_train = subparsers.add_parser("train")
     parser_train.add_argument("--pretrained", type=str, default=None)
@@ -69,4 +66,10 @@ if __name__ == "__main__":
     parser_test.set_defaults(func=test)
 
     args = parser.parse_args()
+
+    args.train_x = f"data/{args.dataset}_train_x.npy"
+    args.train_y = f"data/{args.dataset}_train_y.npy"
+    args.test_x = f"data/{args.dataset}_test_x.npy"
+    args.test_y = f"data/{args.dataset}_test_y.npy"
+
     args.func(args)
