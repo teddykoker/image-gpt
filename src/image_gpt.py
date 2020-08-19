@@ -6,9 +6,10 @@ import numpy as np
 from argparse import ArgumentParser
 
 from gpt2 import GPT2
+from utils import quantize
 
 
-def _shape_input(x):
+def _to_sequence(x):
     """shape batch of images for input into GPT2 model"""
     x = x.view(x.shape[0], -1)  # flatten images into sequences
     x = x.transpose(0, 1).contiguous()  # to shape [seq len, batch]
@@ -16,19 +17,38 @@ def _shape_input(x):
 
 
 class ImageGPT(pl.LightningModule):
-    def __init__(self, hparams):
+    def __init__(
+        self,
+        centroids,
+        embed_dim=16,
+        num_heads=2,
+        num_layers=8,
+        num_pixels=28,
+        num_vocab=16,
+        num_classes=10,
+        classify=False,
+        learning_rate=3e-3,
+        steps=25_000,
+        **kwargs,
+    ):
         super(ImageGPT, self).__init__()
-        self.hparams = hparams
+        self.save_hyperparameters()
         self.gpt = GPT2(
-            embed_dim=self.hparams.embed_dim,
-            num_heads=self.hparams.num_heads,
-            num_layers=self.hparams.num_layers,
-            num_positions=self.hparams.num_pixels * self.hparams.num_pixels,
-            num_vocab=self.hparams.num_vocab,
-            num_classes=self.hparams.num_classes,
+            embed_dim=embed_dim,
+            num_heads=num_heads,
+            num_layers=num_layers,
+            num_positions=num_pixels * num_pixels,
+            num_vocab=num_vocab,
+            num_classes=num_classes,
         )
 
+        self.centroids = nn.Parameter(
+            torch.from_numpy(np.load(centroids)), requires_grad=False
+        )
         self.criterion = nn.CrossEntropyLoss()
+        self.classify = classify
+        self.learning_rate = learning_rate
+        self.steps = steps
 
     @staticmethod
     def add_model_specific_args(parent_parser):
@@ -41,18 +61,18 @@ class ImageGPT(pl.LightningModule):
         parser.add_argument("--num_classes", type=int, default=10)
         parser.add_argument("--classify", action="store_true", default=False)
         parser.add_argument("--batch_size", type=int, default=64)
-        parser.add_argument("--learning_rate", type=float, default=1e-2)
+        parser.add_argument("--learning_rate", type=float, default=3e-3)
         parser.add_argument("--steps", type=int, default=25_000)
         return parser
 
     def configure_optimizers(self):
-        optim = torch.optim.Adam(self.gpt.parameters(), lr=self.hparams.learning_rate)
+        optim = torch.optim.Adam(self.gpt.parameters(), lr=self.learning_rate)
 
         # paper states cosine annealing is only used for pretraining
-        if self.hparams.classify:
+        if self.classify:
             return optim
 
-        sched = torch.optim.lr_scheduler.CosineAnnealingLR(optim, self.hparams.steps)
+        sched = torch.optim.lr_scheduler.CosineAnnealingLR(optim, self.steps)
         return [optim], [sched]
 
     def forward(self, x):
@@ -60,9 +80,11 @@ class ImageGPT(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, y = batch
-        x = _shape_input(x)
 
-        if self.hparams.classify:
+        x = quantize(x, self.centroids)
+        x = _to_sequence(x)
+
+        if self.classify:
             clf_logits = self.gpt(x, classify=True)
             loss = self.criterion(clf_logits, y)
         else:
@@ -74,9 +96,11 @@ class ImageGPT(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
-        x = _shape_input(x)
 
-        if self.hparams.classify:
+        x = quantize(x, self.centroids)
+        x = _to_sequence(x)
+
+        if self.classify:
             clf_logits = self.gpt(x, classify=True)
             loss = self.criterion(clf_logits, y)
             _, preds = torch.max(clf_logits, 1)
@@ -90,7 +114,7 @@ class ImageGPT(pl.LightningModule):
     def validation_epoch_end(self, outs):
         avg_loss = torch.stack([x["val_loss"] for x in outs]).mean()
         logs = {"val_loss": avg_loss}
-        if self.hparams.classify:
+        if self.classify:
             correct = torch.cat([x["correct"] for x in outs])
             logs["val_acc"] = correct.sum().float() / correct.shape[0]
         return {"val_loss": avg_loss, "log": logs}
@@ -107,37 +131,3 @@ class ImageGPT(pl.LightningModule):
         if self.hparams.classify:
             result["log"]["test_acc"] = result["log"].pop("val_acc")
         return result
-
-    def prepare_data(self):
-        ds = lambda x, y: TensorDataset(torch.from_numpy(x), torch.from_numpy(y))
-
-        train_x = np.load(self.hparams.train_x)
-        train_y = np.load(self.hparams.train_y)
-        test_x = np.load(self.hparams.test_x)
-        test_y = np.load(self.hparams.test_y)
-
-        train_ds = ds(train_x, train_y)
-        train_size = int(0.9 * len(train_ds))
-        self.train_ds, self.valid_ds = random_split(
-            train_ds, [train_size, len(train_ds) - train_size]
-        )
-
-        self.test_ds = ds(test_x, test_y)
-
-    def train_dataloader(self):
-        return DataLoader(
-            self.train_ds,
-            shuffle=True,
-            batch_size=self.hparams.batch_size,
-            num_workers=4,
-        )
-
-    def val_dataloader(self):
-        return DataLoader(
-            self.valid_ds, batch_size=self.hparams.batch_size, num_workers=4
-        )
-
-    def test_dataloader(self):
-        return DataLoader(
-            self.test_ds, batch_size=self.hparams.batch_size, num_workers=4
-        )

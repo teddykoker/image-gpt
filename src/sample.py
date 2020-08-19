@@ -5,8 +5,9 @@ import argparse
 from tqdm import tqdm
 from PIL import Image
 
-from module import ImageGPT
-from prepare_data import unquantize
+from image_gpt import ImageGPT
+from utils import quantize, unquantize
+from data import dataloaders
 
 import matplotlib.pyplot as plt
 
@@ -30,6 +31,7 @@ def sample(model, context, length, num_samples=1, temperature=1.0):
 
 def make_figure(rows, centroids):
     figure = np.stack(rows, axis=0)
+    print(figure.shape)
     rows, cols, h, w = figure.shape
     figure = unquantize(figure.swapaxes(1, 2).reshape(h * rows, w * cols), centroids)
     figure = (figure * 256).astype(np.uint8)
@@ -39,20 +41,24 @@ def make_figure(rows, centroids):
 def main(args):
     model = ImageGPT.load_from_checkpoint(args.checkpoint).gpt.cuda()
 
-    test_x = np.load(args.test_x)
     centroids = np.load(args.centroids)
-    np.random.shuffle(test_x)
+    train_dl, valid_dl, test_dl = dataloaders(args.dataset, 1)
+
+    dl = iter(valid_dl)
 
     # rows for figure
     rows = []
 
     for example in tqdm(range(args.num_examples)):
-        img = test_x[example]
+        img, _ = next(dl)
+        h, w = img.shape[-2:]
+
+        img = quantize(img, torch.from_numpy(centroids)).numpy()[0]
         seq = img.reshape(-1)
 
         # first half of image is context
         context = seq[: int(len(seq) / 2)]
-        context_img = np.pad(context, (0, int(len(seq) / 2))).reshape(*img.shape)
+        context_img = np.pad(context, (0, int(len(seq) / 2))).reshape(h, w)
         context = torch.from_numpy(context).cuda()
 
         # predict second half of image
@@ -63,7 +69,7 @@ def main(args):
             .transpose()
         )
 
-        preds = preds.reshape(-1, *img.shape)
+        preds = preds.reshape(-1, h, w)
 
         # combine context, preds, and truth for figure
         rows.append(
@@ -77,8 +83,8 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("checkpoint")
-    parser.add_argument("--test_x", default="data/mnist_test_x.npy")
     parser.add_argument("--centroids", default="data/mnist_centroids.npy")
+    parser.add_argument("--dataset", default="mnist")
     parser.add_argument("--num_examples", default=5)
     parser.add_argument("--num_samples", default=5)
     args = parser.parse_args()
