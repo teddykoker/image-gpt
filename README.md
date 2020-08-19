@@ -25,7 +25,7 @@ NVIDIA 2070 in less than 2 hours.
 - [Image GPT](#image-gpt)
   * [Usage](#usage)
     + [Pre-trained Models](#pre-trained-models)
-    + [Prepare Data](#prepare-data)
+    + [Compute Centroids](#compute-centroids)
     + [Training](#training)
       - [Generative Pre-training](#generative-pre-training)
       - [Classification Fine-tuning](#classification-fine-tuning)
@@ -46,6 +46,8 @@ they are fed into the model.
 ```bash
 # options: mnist, fmnist, cifar10
 python src/compute_centroids.py --dataset mnist --num_clusters=8
+
+# creates data/<dataset>_centroids.npy
 ```
 
 *Note: Use the same `num_clusters` as `num_vocab` in your model*.
@@ -57,7 +59,11 @@ Models can be trained using `src/run.py` with the `train` subcommand.
 #### Generative Pre-training
 
 ```bash
-python src/run.py --dataset mnist train --name mnist_gen
+python src/run.py \
+    --dataset mnist \
+    --centroids data/mnist_centroids.npy \
+    train \
+    --name mnist_gen \
 ```
 
 The following hyperparameters can also be provided. Smallest model from paper is
