@@ -8,7 +8,7 @@ and accompanying [code](https://github.com/openai/image-gpt).
 *Model-generated completions of half-images from test set. First column is
 input; last column is original image*
 
-TODO:
+**TODO:**
  * Batched *k*-means on GPU for quantization of larger datasets (currently using
      `sklearn.cluster.MiniBatchKMeans`.)
  * BERT-style pretraining (currently only generative is supported.)
@@ -72,8 +72,7 @@ Pre-trained models can be fine-tuned by passing the path to the pre-trained
 checkpoint to `--pretrained`, along with the config file and dataset.
 
 ```bash
-python src/run.py --dataset mnist train configs/xxs_clf.yml
---pretrained=models/mnist_gen.ckpt`
+python src/run.py --dataset mnist train configs/xxs_clf.yml --pretrained=models/mnist_gen.ckpt`
 ```
 
 ### Sampling 
