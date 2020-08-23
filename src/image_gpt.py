@@ -1,8 +1,10 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader, random_split
+from torch.optim.lr_scheduler import LambdaLR
 import pytorch_lightning as pl
 import numpy as np
+import math
 from argparse import ArgumentParser
 
 from gpt2 import GPT2
@@ -28,7 +30,8 @@ class ImageGPT(pl.LightningModule):
         num_classes=10,
         classify=False,
         learning_rate=3e-3,
-        steps=25_000,
+        steps=10_000,
+        warmup_steps=500,
         **kwargs,
     ):
         super(ImageGPT, self).__init__()
@@ -49,6 +52,7 @@ class ImageGPT(pl.LightningModule):
         self.classify = classify
         self.learning_rate = learning_rate
         self.steps = steps
+        self.warmup_steps = warmup_steps
 
     @staticmethod
     def add_model_specific_args(parent_parser):
@@ -66,14 +70,19 @@ class ImageGPT(pl.LightningModule):
         return parser
 
     def configure_optimizers(self):
-        optim = torch.optim.Adam(self.gpt.parameters(), lr=self.learning_rate)
+        optimizer = torch.optim.Adam(self.gpt.parameters(), lr=self.learning_rate)
 
-        # paper states cosine annealing is only used for pretraining
+        # no learning rate schedule for fine-tuning
         if self.classify:
-            return optim
+            return optimizer
 
-        sched = torch.optim.lr_scheduler.CosineAnnealingLR(optim, self.steps)
-        return [optim], [sched]
+        scheduler = {
+            "scheduler": LambdaLR(
+                optimizer, learning_rate_schedule(self.warmup_steps, self.steps)
+            ),
+            "interval": "step",
+        }
+        return [optimizer], [scheduler]
 
     def forward(self, x):
         return self.gpt(x)
@@ -85,6 +94,7 @@ class ImageGPT(pl.LightningModule):
         x = _to_sequence(x)
 
         if self.classify:
+            # TODO: joint loss
             clf_logits = self.gpt(x, classify=True)
             loss = self.criterion(clf_logits, y)
         else:
@@ -131,3 +141,18 @@ class ImageGPT(pl.LightningModule):
         if self.hparams.classify:
             result["log"]["test_acc"] = result["log"].pop("val_acc")
         return result
+
+
+def learning_rate_schedule(warmup_steps, total_steps):
+    """Linear warmup for warmup_steps, with cosine annealing to 0 at total_steps"""
+
+    def learning_rate_fn(step):
+        if step < warmup_steps:
+            return float(step) / float(max(1, warmup_steps))
+        else:
+            progress = float(step - warmup_steps) / float(
+                max(1, total_steps - warmup_steps)
+            )
+            return 0.5 * (1.0 + math.cos(math.pi * progress))
+
+    return learning_rate_fn

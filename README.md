@@ -8,12 +8,12 @@ and accompanying [code](https://github.com/openai/image-gpt).
 *Model-generated completions of half-images from test set. First column is
 input; last column is original image*
 
-Differences from original paper:
- * ~~Uses 4-bit grayscale images instead of 9-bit RGB~~
- * ~~28x28 images are used instead of 32x32~~
- * ~~Quantization is done naively using division, not KNN~~
- * *k*-Means is now used for image quantization, number of centroids can be chosen in the
-     `prepare_data` command line script.
+TODO:
+ * Batched *k*-means on GPU for quantization of larger datasets (currently using
+     `sklearn.cluster.MiniBatchKMeans`.)
+ * BERT-style pretraining (currently only generative is supported.)
+ * Load pretrained models from OpenAI.
+ * Reproduce at least iGPT-S results.
 
 According to their [blog post](https://openai.com/blog/image-gpt/), the largest
 model, iGPT-L (1.4 M parameters), was trained for 2500 V100-days. By greatly reducing the number of
@@ -58,40 +58,22 @@ Models can be trained using `src/run.py` with the `train` subcommand.
 
 #### Generative Pre-training
 
+Models can be pretrained by specifying a dataset and model config.
+`configs/s_gen.yml` corresponds to iGPT-S from the paper, `configs/xxs_gen.yml`
+is an extra small model for trying on toy datasets with limited compute.
+
 ```bash
-python src/run.py \
-    --dataset mnist \
-    --centroids data/mnist_centroids.npy \
-    train \
-    --name mnist_gen \
+python src/run.py --dataset mnist train configs/xxs_gen.yml
 ```
-
-The following hyperparameters can also be provided. Smallest model from paper is
-shown for comparison.
-
-Argument          | Default  | iGPT-S [(Chen et al.)](https://cdn.openai.com/papers/Generative_Pretraining_from_Pixels_V2.pdf)
----               | ---      | ---
-`--embed_dim`     | 16       | 512
-`--num_heads`     | 2        | 8
-`--num_layers`    | 8        | 24
-`--num_pixels`    | 28       | 32
-`--num_vocab`     | 16       | 512
-`--batch_size`    | 64       | 128
-`--learning_rate` | 0.01     | 0.01
-`--steps`         | 25000    | 1000000
 
 #### Classification Fine-tuning
 
 Pre-trained models can be fine-tuned by passing the path to the pre-trained
-checkpoint to `--pretrained`, along with the `--classify` argument. I have found
-a small reduction in learning rate is necessary.
+checkpoint to `--pretrained`, along with the config file and dataset.
 
 ```bash
-python src/run.py train \
-    --name mnist_clf  \
-    --pretrained models/mnist_gen.ckpt \
-    --classify \
-    --learning_rate 3e-3
+python src/run.py --dataset mnist train configs/xxs_clf.yml
+--pretrained=models/mnist_gen.ckpt`
 ```
 
 ### Sampling 

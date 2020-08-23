@@ -1,0 +1,21 @@
+name: s_gen
+
+# training
+steps: 10_000
+warmup_steps: 500
+batch_size: 2
+accumulate_grad_batches: 32
+
+learning_rate: 0.00003
+
+# architecture 
+embed_dim: 512
+num_heads: 8
+num_layers: 24
+num_pixels: 32
+num_vocab: 512
+
+classify: False
+
+gpus: 1
+precision: 16

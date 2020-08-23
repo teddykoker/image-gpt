@@ -39,7 +39,7 @@ def make_figure(rows, centroids):
 
 
 def main(args):
-    model = ImageGPT.load_from_checkpoint(args.checkpoint).gpt.cuda()
+    model = ImageGPT.load_from_checkpoint(args.checkpoint).gpt.eval().cuda()
 
     centroids = np.load(args.centroids)
     train_dl, valid_dl, test_dl = dataloaders(args.dataset, 1)
@@ -83,9 +83,9 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("checkpoint")
-    parser.add_argument("--centroids", default="data/mnist_centroids.npy")
     parser.add_argument("--dataset", default="mnist")
-    parser.add_argument("--num_examples", default=5)
-    parser.add_argument("--num_samples", default=5)
+    parser.add_argument("--num_examples", default=5, type=int)
+    parser.add_argument("--num_samples", default=5, type=int)
     args = parser.parse_args()
+    args.centroids = f"data/{args.dataset}_centroids.npy"
     main(args)
