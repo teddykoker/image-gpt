@@ -94,9 +94,11 @@ class ImageGPT(pl.LightningModule):
         x = _to_sequence(x)
 
         if self.classify:
-            # TODO: joint loss
-            clf_logits = self.gpt(x, classify=True)
-            loss = self.criterion(clf_logits, y)
+            clf_logits, logits = self.gpt(x, classify=True)
+            clf_loss = self.criterion(clf_logits, y)
+            gen_loss = self.criterion(logits.view(-1, logits.size(-1)), x.view(-1))
+            # joint loss for classification
+            loss = clf_loss + gen_loss
         else:
             logits = self.gpt(x)
             loss = self.criterion(logits.view(-1, logits.size(-1)), x.view(-1))
@@ -111,8 +113,11 @@ class ImageGPT(pl.LightningModule):
         x = _to_sequence(x)
 
         if self.classify:
-            clf_logits = self.gpt(x, classify=True)
-            loss = self.criterion(clf_logits, y)
+            clf_logits, logits = self.gpt(x, classify=True)
+            clf_loss = self.criterion(clf_logits, y)
+            gen_loss = self.criterion(logits.view(-1, logits.size(-1)), x.view(-1))
+            # joint loss for classification
+            loss = clf_loss + gen_loss
             _, preds = torch.max(clf_logits, 1)
             correct = preds == y
             return {"val_loss": loss, "correct": correct}

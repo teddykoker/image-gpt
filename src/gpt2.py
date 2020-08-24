@@ -73,9 +73,12 @@ class GPT2(nn.Module):
         for layer in self.layers:
             h = layer(h)
 
+        logits = self.head(h)
+
         if not classify:
             # return logits
-            return self.head(h)
+            return logits
 
         h = torch.mean(h, dim=0)  # average pool over sequence
-        return self.clf_head(h)  # return classification logits
+        # return classification logits and generative logits
+        return self.clf_head(h), logits
