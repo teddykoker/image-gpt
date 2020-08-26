@@ -8,6 +8,13 @@ and accompanying [code](https://github.com/openai/image-gpt).
 *Model-generated completions of half-images from test set. First column is
 input; last column is original image*
 
+<img src="figures/cifar10.png" height="256px"/>
+<br>
+*iGPT-S pretrained on `cifar10`. Completions are fairly poor as the model was
+only trained on `cifar10`, not all of ImageNet.*
+
+*Model-generated completions of half-images from test set. First column is
+input; last column is original image*
 **TODO:**
  * Batched *k*-means on GPU for quantization of larger datasets (currently using
      `sklearn.cluster.MiniBatchKMeans`.)
@@ -35,7 +42,8 @@ NVIDIA 2070 in less than 2 hours.
 
 ### Pre-trained Models
 
-Pre-trained models are located in `models` directory.
+Some pre-trained models are located in `models` directory. Run `./download.sh`
+to download the `cifar10` pretrained iGPT-S model.
 
 ### Compute Centroids
 
