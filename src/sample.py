@@ -6,6 +6,7 @@ from tqdm import tqdm
 from PIL import Image
 
 from image_gpt import ImageGPT
+from torch.utils.data import DataLoader
 from utils import quantize, unquantize
 from data import dataloaders
 
@@ -44,7 +45,7 @@ def main(args):
     centroids = np.load(args.centroids)
     train_dl, valid_dl, test_dl = dataloaders(args.dataset, 1)
 
-    dl = iter(valid_dl)
+    dl = iter(DataLoader(valid_dl.dataset, shuffle=True))
 
     # rows for figure
     rows = []
