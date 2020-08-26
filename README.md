@@ -10,15 +10,17 @@ input; last column is original image*
 
 <img src="figures/cifar10.png" height="256px"/>
 <br>
-*iGPT-S pretrained on `cifar10`. Completions are fairly poor as the model was
-only trained on `cifar10`, not all of ImageNet.*
 
-**TODO:**
- * Batched *k*-means on GPU for quantization of larger datasets (currently using
+*iGPT-S pretrained on CIFAR10. Completions are fairly poor as the model was
+only trained on CIFAR10, not all of ImageNet.*
+
+
+## WIP
+ - [ ] Batched *k*-means on GPU for quantization of larger datasets (currently using
      `sklearn.cluster.MiniBatchKMeans`.)
- * BERT-style pretraining (currently only generative is supported.)
- * Load pretrained models from OpenAI.
- * Reproduce at least iGPT-S results.
+ - [ ] BERT-style pretraining (currently only generative is supported.)
+ - [ ] Load pretrained models from OpenAI.
+ - [ ] Reproduce at least iGPT-S results.
 
 According to their [blog post](https://openai.com/blog/image-gpt/), the largest
 model, iGPT-L (1.4 M parameters), was trained for 2500 V100-days. By greatly reducing the number of
