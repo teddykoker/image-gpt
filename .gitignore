@@ -1,5 +1,5 @@
 data/*
-!data/cifar10_centroids.npy
+!data/*_centroids.npy
 logs/
 
 # Byte-compiled / optimized / DLL files
