@@ -73,6 +73,8 @@ class GPT2(nn.Module):
         for layer in self.layers:
             h = layer(h)
 
+        h = self.ln_f(h)
+
         logits = self.head(h)
 
         if not classify:
