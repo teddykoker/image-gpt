@@ -38,8 +38,8 @@ def train(args):
         trainer = pl.Trainer(
             max_steps=config["steps"],
             gpus=config["gpus"],
-            accumulate_grad_batches=config["accumulate_grad_batches"],
-            precision=config["precision"],
+            accumulate_grad_batches=config.get("accumulate_grad_batches", 1),
+            precision=config.get("precision", 32),
             early_stop_callback=early_stopping,
             checkpoint_callback=checkpoint,
             logger=logger,
@@ -66,6 +66,8 @@ def test(args):
     trainer = pl.Trainer(gpus=config["gpus"])
     _, _, test_dl = dataloaders(args.dataset, config["batch_size"])
     model = ImageGPT.load_from_checkpoint(args.checkpoint)
+    if config["classify"]:
+        model.hparams.classify = True
     trainer.test(model, test_dataloaders=test_dl)
 
 

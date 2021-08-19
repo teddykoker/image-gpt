@@ -1,4 +1,4 @@
-name: xxs_gen
+name: xxs_clf
 
 # training
 steps: 25000

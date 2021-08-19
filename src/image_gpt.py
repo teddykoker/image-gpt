@@ -112,7 +112,7 @@ class ImageGPT(pl.LightningModule):
         x = quantize(x, self.centroids)
         x = _to_sequence(x)
 
-        if self.classify:
+        if self.classify or self.hparams.classify:
             clf_logits, logits = self.gpt(x, classify=True)
             clf_loss = self.criterion(clf_logits, y)
             gen_loss = self.criterion(logits.view(-1, logits.size(-1)), x.view(-1))
@@ -129,7 +129,7 @@ class ImageGPT(pl.LightningModule):
     def validation_epoch_end(self, outs):
         avg_loss = torch.stack([x["val_loss"] for x in outs]).mean()
         logs = {"val_loss": avg_loss}
-        if self.classify:
+        if self.classify or self.hparams.classify:
             correct = torch.cat([x["correct"] for x in outs])
             logs["val_acc"] = correct.sum().float() / correct.shape[0]
         return {"val_loss": avg_loss, "log": logs}
