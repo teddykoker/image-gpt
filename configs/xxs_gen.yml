@@ -4,6 +4,7 @@ name: xxs_gen
 steps: 25000
 batch_size: 64
 learning_rate: 0.003
+accumulate_grad_batches: 1
 
 # architecture 
 embed_dim: 16
@@ -15,4 +16,5 @@ num_vocab: 16
 classify: False
 
 gpus: 1
+precision: 16
 
